@@ -10,6 +10,7 @@
  *usage: $("#id").formdata();
  *		  $("#id").fileinputrp(option);
  * 
+ * part of code copy from bootstrap-fileinput
  * 
  * Author: huangrupeng
  * Copyright: 2015, javahuang
