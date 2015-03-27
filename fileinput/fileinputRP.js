@@ -10,7 +10,6 @@
  *usage: $("#id").formdata();
  *		  $("#id").fileinputrp(option);
  * 
- * part of code copy from bootstrap-fileinput
  * 
  * Author: huangrupeng
  * Copyright: 2015, javahuang
@@ -26,6 +25,11 @@
     },
     hasFileUploadSupport = function () {
         return hasFileAPISupport && window.FormData;
+    },
+    hasAttribute=function(obj,attr){
+    	if($(obj).attr(attr)==undefined)
+    		return false
+    	return true;
     },
 	getNum = function (num, def) {
             def = def || 0;
@@ -57,7 +61,14 @@
 	defaultLayoutTemplates = {
             mainDiv: tDiv,
 			subItem:tItem,
-			errSpan:tErrMsg
+			errSpan:tErrMsg,
+    },
+    defaultFileInputCss={//附件选择按钮默认样式
+    	'cursor':'pointer',
+    	'font-weight':'bold'
+    },
+    defaultItemCss={
+    		
     },
     FileInputRP=function(element, options){
     	this.$element = $(element);
@@ -79,10 +90,15 @@
         init: function (options) {
         	var me=this,$el=me.$element;
 			$.each(options, function (key, value) {
-                if (key === 'maxFileCount' || key === 'maxFileSize') {
-                    me[key] = getNum(value);
+                if (key === 'maxfilesize' || key === 'maxfilecount') {
+                	if(key === 'maxfilesize')
+                		me['maxFileSize']=value;
+                	if(key === 'maxfilecount')
+                		me['maxFileCount']=value;
+                }else{
+                	 me[key] = value;
                 }
-                me[key] = value;
+               
             });
         	me.reader = null;
             me.formdata = {};
@@ -144,11 +160,10 @@
 			var me=this,__files=me._files,$el=me.$element,_maxFileSize=me.maxFileSize,
 				_maxFileCount=me.maxFileCount,_name=$el.attr("name");
 			var _multiple=$el.attr("multiple");
-			if((isEmpty(_multiple)&&files.size==1)||(_multiple==false&&files.size==1)){
+			if((isEmpty(_multiple)&&__files.size==1)||(_multiple==false&&__files.size==1)){
 				me.showErr("不能多选");
 				return;
 			}
-			
 			$.each(files,function(index,file){
 				var filename=file.name,filesize=file.size,_file=__files[_name];
 				if(_maxFileSize!=0&&file.size<_maxFileSize){
@@ -156,7 +171,7 @@
 					return;
 				}
 				if(_maxFileCount!=0&&__files.size>=_maxFileCount){
-					me.showErr("不能上传超过"+_maxFileSize+"个文件");$el.val("");
+					me.showErr("不能上传超过"+_maxFileCount+"个文件");$el.val("");
 					return;
 				} 
 				
@@ -210,6 +225,7 @@
 				.replace("{showTitle}",me.buildTitle());
 			$el.before(maindiv);
 			addCss($("#"+id+"_span"),me.fileSelectClass);
+			$("#"+id+"_span").css(me.fileInputCss);
 			$el.hide();	
 			return spanId;
 		},
@@ -232,32 +248,31 @@
              var $this = $(this),
                  data = $this.data('fileinput'),
                  options = typeof option === 'object' && option;
-             if (!data) {
-            	 
-                 data = new FileInputRP(this, $.extend({}, $.fn.fileinputrp.defaults, options, $(this).data()));
-                 $this.data('fileinput', data);
+             if(hasAttribute(this,'fileinput')){
+            	 if (!data) {
+                     data = new FileInputRP(this, $.extend({}, $.fn.fileinputrp.defaults, options, $(this).data()));
+                     $this.data('fileinput', data);
+                 }
+                 if (typeof option === 'string') {
+                     data[option].apply(data, args);
+                 } 
              }
-             if (typeof option === 'string') {
-                 data[option].apply(data, args);
-             } 
          });
     }
-	
+    
 	//将表单字段组装成一个FormData
 	$.fn.formdata=function(option){		
 		if(hasFileUploadSupport){
     		var form=$(this)[0];
         	var formdata = new FormData(form);
 			//找到子元素
-			this.children("input[type=file]").each(function(){
+			this.find("input[type=file]").each(function(){
 				if($(this).data('fileinput')){
 					var fileinputdata=$(this).data('fileinput')._files;
 					for(key in fileinputdata){
 						var name=key,files=fileinputdata[key];
-						console.log(name)
 						for(filename in files){
 							var file=files[filename];
-							console.dir(file)
 							formdata.append(name,file);
 						}
 					}
@@ -268,7 +283,7 @@
 			return;
 		}
 	}
-    //默认配置参数
+    //默认配置参数   页面通过配置data-maxFileCount属性(通过$.data接收的参数key会自动变成小写)
     $.fn.fileinputrp.defaults = {
     	maxFileSize:0,//默认文件大小 kb
     	maxFileCount:0,//默认文件的数量
@@ -277,11 +292,19 @@
 		fileSelectText:'选择附件',
 		fileSelectTitle:'选择{type}格式的文件',
 		fileSelectClass:'',//按钮添加的样式
+		fileInputCss:defaultFileInputCss,
 		layoutTemplates: defaultLayoutTemplates,
 		itemClass:'',
+		itemCss:defaultItemCss,
 		itemText:'点击删除'
     }
-	$.formdata={};
+
+    $(document).ready(function () {
+        var $input = $('input[type=file]');
+        console.dir($input.attr("fileinput"))
+        $input.fileinputrp();
+    });
+    
 })(window.jQuery);
 
   
